@@ -3,8 +3,8 @@
 // (c) 2008-2010 jason frame [jason@onehackoranother.com]
 // released under the MIT license
 
-(function($) {
-    
+;(function($) {
+        
     function Tipsy(element, options) {
         this.$element = $(element);
         this.options = options;
@@ -17,61 +17,120 @@
             var title = this.getTitle();
             if (title && this.enabled) {
                 var $tip = this.tip();
-                
                 $tip.find('.tipsy-inner')[this.options.html ? 'html' : 'text'](title);
-                $tip[0].className = 'tipsy'; // reset classname in case of dynamic gravity
-                $tip.remove().css({top: 0, left: 0, visibility: 'hidden', display: 'block'}).appendTo(document.body);
-                
-                var pos = $.extend({}, this.$element.offset(), {
-                    width: this.$element[0].offsetWidth,
-                    height: this.$element[0].offsetHeight
-                });
-                
-                var actualWidth = $tip[0].offsetWidth, actualHeight = $tip[0].offsetHeight;
-                var gravity = (typeof this.options.gravity == 'function')
-                                ? this.options.gravity.call(this.$element[0])
-                                : this.options.gravity;
-                
-                var tp;
-                switch (gravity.charAt(0)) {
-                    case 'n':
-                        tp = {top: pos.top + pos.height + this.options.offset, left: pos.left + pos.width / 2 - actualWidth / 2};
-                        break;
-                    case 's':
-                        tp = {top: pos.top - actualHeight - this.options.offset, left: pos.left + pos.width / 2 - actualWidth / 2};
-                        break;
-                    case 'e':
-                        tp = {top: pos.top + pos.height / 2 - actualHeight / 2, left: pos.left - actualWidth - this.options.offset};
-                        break;
-                    case 'w':
-                        tp = {top: pos.top + pos.height / 2 - actualHeight / 2, left: pos.left + pos.width + this.options.offset};
-                        break;
-                }
-                
-                if (gravity.length == 2) {
-                    if (gravity.charAt(1) == 'w') {
-                        tp.left = pos.left + pos.width / 2 - 15;
-                    } else {
-                        tp.left = pos.left + pos.width / 2 - actualWidth + 15;
-                    }
-                }
-                
-                $tip.css(tp).addClass('tipsy-' + gravity);
-                
-                if (this.options.fade) {
-                    $tip.stop().css({opacity: 0, display: 'block', visibility: 'visible'}).animate({opacity: this.options.opacity});
-                } else {
-                    $tip.css({visibility: 'visible', opacity: this.options.opacity});
-                }
+                $tip[0].className = 'tipsy'; // reset classname in case of dynamic gravity and ajax loading..
+                this.align();
             }
         },
         
+        align: function() {
+        
+            var $tip = this.tip();
+
+            $tip.remove().css({top: 0, left: 0, visibility: 'hidden', display: 'block'}).appendTo(document.body);
+                
+            var pos = $.extend({}, this.$element.offset(), {
+                width: this.$element[0].offsetWidth,
+                height: this.$element[0].offsetHeight
+            });
+            
+            var actualWidth = $tip[0].offsetWidth, actualHeight = $tip[0].offsetHeight;
+            var gravity = (typeof this.options.gravity == 'function')
+                            ? this.options.gravity.call(this.$element[0])
+                            : this.options.gravity;
+            
+            var tp;
+            switch (gravity.charAt(0)) {
+                case 'n':
+                    tp = {top: pos.top + pos.height + this.options.offset, left: pos.left + pos.width / 2 - actualWidth / 2};
+                    break;
+                case 's':
+                    tp = {top: pos.top - actualHeight - this.options.offset, left: pos.left + pos.width / 2 - actualWidth / 2};
+                    break;
+                case 'e':
+                    tp = {top: pos.top + pos.height / 2 - actualHeight / 2, left: pos.left - actualWidth - this.options.offset};
+                    break;
+                case 'w':
+                    tp = {top: pos.top + pos.height / 2 - actualHeight / 2, left: pos.left + pos.width + this.options.offset};
+                    break;
+            }
+            
+            if (gravity.length == 2) {
+                if (gravity.charAt(1) == 'w') {
+                    tp.left = pos.left + pos.width / 2 - 15;
+                } else self
+            }
+            
+            $tip.css(tp).addClass('tipsy-' + gravity);
+            
+            if (this.options.fade) {
+                $tip.stop().css({opacity: 0, display: 'block', visibility: 'visible'}).animate({opacity: this.options.opacity});
+            } else {
+                $tip.css({visibility: 'visible', opacity: this.options.opacity});
+            }
+            
+            return this;
+            
+        },
+        
         hide: function() {
+            if (this.request) {
+              this.request = this.request.abort();
+              this.reset();
+            }
             if (this.options.fade) {
                 this.tip().stop().fadeOut(function() { $(this).remove(); });
             } else {
+                // reset tipsy to hover/leaves
                 this.tip().remove();
             }
+        },
+        
+        load: function(url) {
+          
+          if (this.$element.attr('tipsy-ajax')) return this;
+          var self = this;
+          
+          $('a[tipsy-ajax]').tipsy('hide');
+          
+          // remove mouse events
+          this.$element.unbind('mouseenter').unbind('mouseleave');
+          
+          this.loading();
+          
+          this.request = $.get(url, function(data) {
+            self.$tip[0].className = 'tipsy';
+            self.$tip.find('.tipsy-inner')['html'](data)
+            self.align().addCloseButton();
+            
+            if (self.options.autohide) {
+              self.$tip.mouseleave(function(evt) { self.hide(); });
+            }
+            
+            $(window).resize(function(evt) {
+              self.align();
+            });
+            
+            
+          });
+        },
+        loading: function() {
+            this.$element.attr('tipsy-ajax', true);
+            var inner = this.$tip.addClass('tipsy-loading').find('.tipsy-inner');
+            inner.html('<img src="/images/tipsy-loading.gif" alt="Loading" />Loading..');
+            this.align();
+        },        
+        addCloseButton: function() {
+            var self = this;
+            $('<a href="#" class="tipsy-close">x</a>').appendTo(this.$tip).click(function(evt) {
+                evt.preventDefault();
+                self.hide();
+            });
+        },
+        
+        reset: function() { 
+          $(window).unbind('resize');
+          this.$element.removeAttr('tipsy-ajax').removeData('tipsy').tipsy(this.options);
         },
         
         fixTitle: function() {
@@ -114,13 +173,15 @@
         toggleEnabled: function() { this.enabled = !this.enabled; }
     };
     
-    $.fn.tipsy = function(options) {
+    $.fn.tipsy = function() {
+        
+        var options = arguments[0];
         
         if (options === true) {
             return this.data('tipsy');
         } else if (typeof options == 'string') {
             var tipsy = this.data('tipsy');
-            if (tipsy) tipsy[options]();
+            if (tipsy) tipsy[options](arguments[1]);
             return this;
         }
         
@@ -170,17 +231,18 @@
     };
     
     $.fn.tipsy.defaults = {
-        delayIn: 0,
+        autohide: false,
+        delayIn:  0,
         delayOut: 0,
-        fade: false,
+        fade:     false,
         fallback: '',
-        gravity: 'n',
-        html: false,
-        live: false,
-        offset: 0,
-        opacity: 0.8,
-        title: 'title',
-        trigger: 'hover'
+        gravity:  'n',
+        html:     false,
+        live:     false,
+        offset:   0,
+        opacity:  0.8,
+        title:    'title',
+        trigger:  'hover'
     };
     
     // Overwrite this method to provide options on a per-element basis.

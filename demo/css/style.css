@@ -1,0 +1,80 @@
+@import url(../../src/stylesheets/tipsy.css);
+
+
+body, html {
+ 	height: 100%;
+}
+body {  
+  width: 100%;
+  margin: 0;
+  background-color: #eee;
+  font-family: "HelveticaNeue", Arial, sans-serif;
+  font-size: 100%;
+  color: #888;
+}
+
+
+a {
+  color: #68962c;
+  -webkit-tap-highlight-color: #e00053;
+}
+a, a:hover, a:active {
+  outline-width: 0;
+}
+a img {
+  border: 0;
+}
+
+hr {
+  margin: 3px 0 10px 0;
+  border: 0;
+  border-top: 1px solid #ccc;
+}
+
+
+
+/* Layout             */
+/* ------------------ */
+
+div#container {
+  display: block;
+  position: relative;
+  margin: 0 auto;
+  width: 280px;
+  padding: 10px 20px 26px 20px;
+}
+div#header {
+  position: relative;
+  margin-bottom: 10px;
+}
+div#page {
+  position: relative;
+  width: auto;
+  min-height: 287px;
+  padding: 15px 27px;
+  background-color: #ddd;
+  border: 15px solid #fff;
+  text-align: center;  
+}
+
+/* Footer             */
+/* ------------------ */
+
+div#footer {
+  padding: 5px 0;
+  font-size: 11px;
+}
+div#footer p {
+  clear: none;
+  margin: 0;
+}
+div#footer p.left {
+  float: left;
+}
+div#footer p.right {
+  float: right;
+}
+
+.clear {
+  clear: both;
+}
